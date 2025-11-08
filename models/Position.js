@@ -1,24 +1,21 @@
-const mongoose = require('mongoose');
-const { float } = require('webidl-conversions');
+const { Schema, model, models } = require("mongoose");
 
-const PositionSchema = new mongoose.Schema({
+const PositionSchema = new Schema(
+  {
+    when: { type: Date, required: true },
+    loc: {
+      type: { type: String, enum: ["Point"], required: true },
+      coordinates: { type: [Number], required: true }, // [lng, lat]
+    },
+    accuracyM: { type: Number, default: 20, min: 0, max: 1000 },
+    description: { type: String, default: "" },
+    status: { type: String, enum: ["approved", "pending", "rejected"], default: "approved" },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { versionKey: false }
+);
 
-    longitude: {
-     type: float,
-     required: true
-    },
-    latitude: {
-     type: float,
-     required: true
-    },
-    Time_Stamp: {
-        type: float,
-        required: true
-    },
-    note: {
-        type String,
-        required: false
-    }
-});
+PositionSchema.index({ loc: "2dsphere" });
+PositionSchema.index({ when: -1 });
 
-module.exports = mongoose.model('Position', PositionSchema);
+module.exports = models.Position || model("Position", PositionSchema);

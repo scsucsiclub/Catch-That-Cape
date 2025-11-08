@@ -1,14 +1,17 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect('mongodb://admin:password@localhost:27017/myDatabase', {
-    });
-    console.log('MongoDB connected successfully');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
+module.exports = async function connectDB() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error("Missing MONGODB_URI");
     process.exit(1);
   }
-};
 
-module.exports = connectDB;
+  if (mongoose.connection.readyState >= 1) return;
+  await mongoose.connect(uri, {
+    appName: "st-cloud-superman",
+    serverSelectionTimeoutMS: 10000,
+  });
+
+  console.log("MongoDB connected");
+};
