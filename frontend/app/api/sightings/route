@@ -1,0 +1,42 @@
+import { NextResponse } from 'next/server';
+import clientPromise from '@/lib/mongodb';
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { lat, lng, description, accuracyM } = body;
+
+    if (!lat || !lng) {
+      return NextResponse.json(
+        { error: 'Latitude and longitude are required' },
+        { status: 400 }
+      );
+    }
+
+    const client = await clientPromise;
+    const db = client.db('superman_tracker');
+
+    const sighting = {
+      loc: {
+        type: 'Point',
+        coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
+      },
+      description: description || '',
+      accuracyM: accuracyM || 20,
+      timestamp: new Date(),
+    };
+
+    const result = await db.collection('sightings').insertOne(sighting);
+
+    return NextResponse.json({
+      success: true,
+      id: result.insertedId,
+    });
+  } catch (error) {
+    console.error('Error saving sighting:', error);
+    return NextResponse.json(
+      { error: 'Failed to save sighting' },
+      { status: 500 }
+    );
+  }
+}
