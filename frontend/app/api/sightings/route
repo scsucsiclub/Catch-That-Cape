@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
+import Sighting from "@/models/Sighting";
 
 export async function POST(request: Request) {
   try {
@@ -8,34 +9,33 @@ export async function POST(request: Request) {
 
     if (!lat || !lng) {
       return NextResponse.json(
-        { error: 'Latitude and longitude are required' },
+        { error: "Latitude and longitude are required" },
         { status: 400 }
       );
     }
 
-    const client = await clientPromise;
-    const db = client.db('superman_tracker');
+    // Connect to MongoDB
+    await connectDB();
 
-    const sighting = {
+    // Create new sighting
+    const sighting = await Sighting.create({
       loc: {
-        type: 'Point',
-        coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
+        type: "Point",
+        coordinates: [lng, lat], // GeoJSON: [longitude, latitude]
       },
-      description: description || '',
+      description: description || "",
       accuracyM: accuracyM || 20,
       timestamp: new Date(),
-    };
-
-    const result = await db.collection('sightings').insertOne(sighting);
+    });
 
     return NextResponse.json({
       success: true,
-      id: result.insertedId,
+      id: sighting._id,
     });
   } catch (error) {
-    console.error('Error saving sighting:', error);
+    console.error("Error saving sighting:", error);
     return NextResponse.json(
-      { error: 'Failed to save sighting' },
+      { error: "Failed to save sighting" },
       { status: 500 }
     );
   }

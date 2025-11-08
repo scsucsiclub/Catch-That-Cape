@@ -1,24 +1,24 @@
-import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
+import Sighting from "@/models/Sighting";
 
 export async function GET() {
   try {
-    const client = await clientPromise;
-    const db = client.db('superman_tracker');
-    
-    const latest = await db.collection('sightings')
-      .find()
-      .sort({ timestamp: -1 })
-      .limit(1)
-      .toArray();
+    // Connect to MongoDB
+    await connectDB();
 
-    if (latest.length === 0) {
+    // Get the most recent sighting
+    const latest = await Sighting.findOne()
+      .sort({ timestamp: -1 })
+      .lean();
+
+    if (!latest) {
       return NextResponse.json(null);
     }
 
-    return NextResponse.json(latest[0]);
+    return NextResponse.json(latest);
   } catch (error) {
-    console.error('Error fetching latest sighting:', error);
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    console.error("Error fetching latest sighting:", error);
+    return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
   }
 }
