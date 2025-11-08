@@ -96,7 +96,6 @@ export default function Home() {
       // ignore in MVP
     }
   }
-
   function useMyLocation() {
     if (!navigator.geolocation) {
       alert("Geolocation not supported");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,11 +26,22 @@ export default function ReportSightingForm({
   latLng?: { lat: number; lng: number };
   onSubmitted?: () => void;
 }) {
-  const { register, handleSubmit, reset, setValue } = useForm<FormValues>({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { 
+    register, 
+    handleSubmit, 
+    reset, 
+    setValue, 
+    formState: { errors } 
+  } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      accuracyM: 20,
+    }
   });
 
-  // when user clicks map, sync into the form
+  // Sync map clicks to form inputs
   useEffect(() => {
     if (latLng) {
       setValue("lat", latLng.lat);
@@ -39,31 +50,53 @@ export default function ReportSightingForm({
   }, [latLng, setValue]);
 
   const onSubmit = async (data: FormValues) => {
-    const body = {
-      when: new Date().toISOString(),
-      loc: { type: "Point", coordinates: [data.lng, data.lat] },
-      accuracyM: data.accuracyM ?? 20,
-      description: data.description?.slice(0, 500) ?? "",
-    };
+    setIsSubmitting(true);
+    
+    try {
+      // Send data in the format your API expects
+      const body = {
+        lat: data.lat,
+        lng: data.lng,
+        accuracyM: data.accuracyM ?? 20,
+        description: data.description?.trim() || "",
+      };
 
-    const url = process.env.NEXT_PUBLIC_API_BASE
-      ? `${process.env.NEXT_PUBLIC_API_BASE}/api/sightings`
-      : "/api/sightings";
+      const url = process.env.NEXT_PUBLIC_API_BASE
+        ? `${process.env.NEXT_PUBLIC_API_BASE}/api/sightings`
+        : "/api/sightings";
 
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-    if (!r.ok) {
-      alert("Failed to submit sighting");
-      return;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to submit sighting");
+      }
+
+      const result = await response.json();
+      console.log("Sighting submitted:", result);
+      
+      alert("✅ Superman sighting reported successfully!");
+      
+      // Reset form
+      reset({
+        lat: undefined,
+        lng: undefined,
+        accuracyM: 20,
+        description: "",
+      });
+      
+      // Call parent callback to clear map markers and refresh
+      onSubmitted?.();
+    } catch (error) {
+      console.error("Error submitting sighting:", error);
+      alert(`❌ Failed to submit sighting: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    alert("Sighting submitted!");
-    reset();
-    onSubmitted?.();
   };
 
   return (
@@ -73,25 +106,77 @@ export default function ReportSightingForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="lat">Latitude</Label>
-            <Input id="lat" type="number" step="any" {...register("lat")} />
+            <Input 
+              id="lat" 
+              type="number" 
+              step="any" 
+              placeholder="45.5579"
+              {...register("lat", { valueAsNumber: true })} 
+            />
+            {errors.lat && (
+              <p className="text-sm text-red-500 mt-1">{errors.lat.message}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="lng">Longitude</Label>
-            <Input id="lng" type="number" step="any" {...register("lng")} />
+            <Input 
+              id="lng" 
+              type="number" 
+              step="any" 
+              placeholder="-94.1632"
+              {...register("lng", { valueAsNumber: true })} 
+            />
+            {errors.lng && (
+              <p className="text-sm text-red-500 mt-1">{errors.lng.message}</p>
+            )}
           </div>
         </div>
 
         <div>
           <Label htmlFor="accuracyM">Accuracy (meters)</Label>
-          <Input id="accuracyM" type="number" step="1" placeholder="20" {...register("accuracyM")} />
+          <Input 
+            id="accuracyM" 
+            type="number" 
+            step="1" 
+            placeholder="20" 
+            defaultValue={20}
+            {...register("accuracyM", { valueAsNumber: true })} 
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            How precise is this location?
+          </p>
+          {errors.accuracyM && (
+            <p className="text-sm text-red-500 mt-1">{errors.accuracyM.message}</p>
+          )}
         </div>
 
         <div>
           <Label htmlFor="description">Description (optional)</Label>
-          <Textarea id="description" {...register("description")} />
+          <Textarea 
+            id="description" 
+            placeholder="Saw Superman flying over downtown, wearing his red cape..."
+            rows={3}
+            maxLength={500}
+            {...register("description")} 
+          />
+          {errors.description && (
+            <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
+          )}
         </div>
 
-        <Button type="submit">Submit Sighting</Button>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting || !latLng}
+          className="w-full"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Sighting"}
+        </Button>
+        
+        {!latLng && (
+          <p className="text-sm text-amber-600 text-center bg-amber-50 p-2 rounded">
+            👆 Click on the map to select a location first
+          </p>
+        )}
       </form>
     </Card>
   );
