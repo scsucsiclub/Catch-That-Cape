@@ -97,39 +97,6 @@ export default function Home() {
     }
   }
 
-async function handleSubmit(e: React.FormEvent) {
-  e.preventDefault();
-  
-  if (!latLng) {
-    alert('Please select a location on the map');
-    return;
-  }
-
-  try {
-    const response = await fetch('/api/sightings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        lat: latLng.lat,
-        lng: latLng.lng,
-        description: description, // from your form state
-        accuracyM: 20,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to submit');
-    }
-
-    alert('Sighting reported successfully!');
-    onSubmitted?.();
-  } catch (error) {
-    alert('Error submitting sighting');
-    console.error(error);
-  }
-}
-
-
   function useMyLocation() {
     if (!navigator.geolocation) {
       alert("Geolocation not supported");

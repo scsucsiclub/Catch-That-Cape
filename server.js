@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const connectDB = require("./db");
+const connectDB = require("./Database");
 const Position = require("./models/Position");
 
 const app = express();
@@ -37,6 +37,7 @@ app.get("/api/sightings/latest", async (_req, res) => {
     const doc = await Position.findOne({ status: "approved" }).sort({ when: -1 }).lean();
     res.json(doc || null);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -56,5 +57,5 @@ app.get("/api/sightings", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("API on http://localhost:" + PORT));
