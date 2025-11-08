@@ -1,16 +1,17 @@
 version: '3.8'
-services: 
-  mongodb:
-    image: mongo:latest
-    container_name: out_container
-    ports:
-    - "27017:27017"
-    environment:
-     MONGO_INITDB_ROOT_USERNAME: admin
-     MONGO_INITDB_ROOT_PASSWORD: passoword
-    volumes:
-    - mongodb_data:/data/db
 
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: superman_tracker_db
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    volumes:
+      - mongodb_data:/data/db
 
 volumes:
- mongodb_data:
+  mongodb_data:
