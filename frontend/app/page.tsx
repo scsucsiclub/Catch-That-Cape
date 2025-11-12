@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
 import ReportSightingForm from "../components/ReportSightingForm";
+import { getApiUrl } from "@/lib/api";
 
 // Lazy-load Leaflet only in the browser (avoids SSR issues)
 const L: any = typeof window !== "undefined" ? require("leaflet") : null;
@@ -72,8 +73,7 @@ export default function Home() {
 
   async function loadLatest() {
     try {
-      // const base = process.env.NEXT_PUBLIC_API_BASE ?? "";
-      const r = await fetch(`http://localhost:3000/api/sightings/latest`);
+      const r = await fetch(getApiUrl("/api/sightings/latest"));
       if (!r.ok) return;
       const d = await r.json();
       if (!d) return;

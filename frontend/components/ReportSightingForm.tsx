@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { time } from "console";
+import { getApiUrl } from "@/lib/api";
 
 const formSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -64,7 +64,7 @@ export default function ReportSightingForm({
         description: data.description?.trim() || "",
       };
 
-      const url = "http://localhost:3000/api/sightings";
+      const url = getApiUrl("/api/sightings");
 
       const response = await fetch(url, {
         method: "POST",
@@ -136,8 +136,8 @@ const onCompareLatest = async () => {
       return;
     }
 
-    // Fetch latest sighting (relative URL to avoid SSL mismatch)
-    const res = await fetch("http://localhost:3000/api/sightings/latest", { cache: "no-store" });
+    // Fetch latest sighting
+    const res = await fetch(getApiUrl("/api/sightings/latest"), { cache: "no-store" });
 
     if (!res.ok) {
       const note = await res.text().catch(() => "");
